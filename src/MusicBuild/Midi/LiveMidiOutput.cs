@@ -12,10 +12,10 @@ namespace MusicBuild.Midi;
 /// Returns <c>null</c> if the platform is unsupported or no MIDI device is available.
 /// </para>
 /// </summary>
-internal sealed partial class LiveMidiOutput : IMidiOutput
+internal sealed class LiveMidiOutput : IMidiOutput
 {
     private nint _handle;
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
     private bool _disposed;
 
     private LiveMidiOutput(nint handle) => _handle = handle;
@@ -26,7 +26,7 @@ internal sealed partial class LiveMidiOutput : IMidiOutput
     /// </summary>
     internal static LiveMidiOutput? TryCreate()
     {
-        if (!OperatingSystem.IsWindows())
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             return null;
         }
@@ -54,8 +54,8 @@ internal sealed partial class LiveMidiOutput : IMidiOutput
     public void PlayNote(int channel, int noteNumber, int velocity, int durationMs)
     {
         var ch = channel & 0x0F;
-        var note = (uint)Math.Clamp(noteNumber, 0, 127);
-        var vel = (uint)Math.Clamp(velocity, 0, 127);
+        var note = (uint)Math.Max(0, Math.Min(127, noteNumber));
+        var vel = (uint)Math.Max(0, Math.Min(127, velocity));
 
         // Note On: 0x90 | channel, note, velocity
         var noteOnMsg = (uint)(0x90 | ch) | (note << 8) | (vel << 16);
@@ -114,26 +114,26 @@ internal sealed partial class LiveMidiOutput : IMidiOutput
     /// <summary>
     /// P/Invoke declarations for the Windows Multimedia MIDI API.
     /// </summary>
-    private static partial class NativeMethods
+    private static class NativeMethods
     {
         /// <summary>Opens a MIDI output device.</summary>
-        [LibraryImport("winmm.dll", EntryPoint = "midiOutOpen")]
+        [DllImport("winmm.dll", EntryPoint = "midiOutOpen")]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        internal static partial int MidiOutOpen(out nint lphMidiOut, int uDeviceID, nint dwCallback, nint dwInstance, int fdwOpen);
+        internal static extern int MidiOutOpen(out nint lphMidiOut, int uDeviceID, nint dwCallback, nint dwInstance, int fdwOpen);
 
         /// <summary>Sends a short MIDI message (note on/off, program change, etc.).</summary>
-        [LibraryImport("winmm.dll", EntryPoint = "midiOutShortMsg")]
+        [DllImport("winmm.dll", EntryPoint = "midiOutShortMsg")]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        internal static partial int MidiOutShortMsg(nint hMidiOut, uint dwMsg);
+        internal static extern int MidiOutShortMsg(nint hMidiOut, uint dwMsg);
 
         /// <summary>Resets the MIDI output device, silencing all notes.</summary>
-        [LibraryImport("winmm.dll", EntryPoint = "midiOutReset")]
+        [DllImport("winmm.dll", EntryPoint = "midiOutReset")]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        internal static partial int MidiOutReset(nint hMidiOut);
+        internal static extern int MidiOutReset(nint hMidiOut);
 
         /// <summary>Closes a MIDI output device.</summary>
-        [LibraryImport("winmm.dll", EntryPoint = "midiOutClose")]
+        [DllImport("winmm.dll", EntryPoint = "midiOutClose")]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        internal static partial int MidiOutClose(nint hMidiOut);
+        internal static extern int MidiOutClose(nint hMidiOut);
     }
 }

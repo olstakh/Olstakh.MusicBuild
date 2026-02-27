@@ -29,7 +29,7 @@ internal sealed class BuildMusicComposer : IDisposable
 {
     private readonly MusicConfiguration _config;
     private readonly Scale _scale;
-    private readonly List<NoteEvent> _events = [];
+    private readonly List<NoteEvent> _events = new();
     private readonly IMidiOutput? _liveOutput;
     private readonly Dictionary<string, MusicalKey> _projectKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTime> _targetStartTimes = new(StringComparer.OrdinalIgnoreCase);
@@ -101,7 +101,7 @@ internal sealed class BuildMusicComposer : IDisposable
     /// Chord tones of the triad (root, 3rd, 5th). Melody gravitates toward these
     /// because they are consonant with the pad and bass.
     /// </summary>
-    private static ReadOnlySpan<int> ChordToneDegrees => [0, 2, 4];
+    private static readonly int[] ChordToneDegrees = { 0, 2, 4 };
 
     internal BuildMusicComposer(MusicConfiguration config, IMidiOutput? liveOutput = null)
     {
@@ -138,7 +138,7 @@ internal sealed class BuildMusicComposer : IDisposable
         // Pad chord establishes harmonic context (root + 3rd + 5th)
         // Placed one octave below melody so they don't compete in the same register
         var padDuration = _config.TicksPerQuarterNote * 16; // 4 bars
-        foreach (var degree in (ReadOnlySpan<int>)[0, 2, 4])
+        foreach (var degree in (int[])new[] { 0, 2, 4 })
         {
             EmitNote(new NoteEvent
             {
@@ -161,7 +161,7 @@ internal sealed class BuildMusicComposer : IDisposable
         if (!succeeded)
         {
             // Dissonant low pad on project failure — unsettling harmonic shift
-            var key = _projectKeys.GetValueOrDefault(projectPath, _currentKey);
+            var key = _projectKeys.TryGetValue(projectPath, out var k) ? k : _currentKey;
             var tick = ToTick(timestamp);
 
             EmitNote(new NoteEvent
@@ -197,7 +197,7 @@ internal sealed class BuildMusicComposer : IDisposable
         _currentMelodyDegree = StepToward(_currentMelodyDegree, targetDegree, maxStep: 2);
         _currentMelodyDegree = SnapToChordTone(_currentMelodyDegree);
 
-        var key = _projectKeys.GetValueOrDefault(projectPath, _currentKey);
+        var key = _projectKeys.TryGetValue(projectPath, out var k) ? k : _currentKey;
 
         EmitNote(new NoteEvent
         {
@@ -335,13 +335,13 @@ internal sealed class BuildMusicComposer : IDisposable
         {
             // Arpeggiated major-ish resolution: root → 3rd → 5th → octave
             // Spread across time so it sounds like a flourish, not a cluster
-            EmitArpeggiatedChord(tick, _currentKey, [0, 2, 4, 7], _config.BaseOctave,
+            EmitArpeggiatedChord(tick, _currentKey, new[] { 0, 2, 4, 7 }, _config.BaseOctave,
                 MidiConstants.HighVelocity, _config.TicksPerQuarterNote * 3);
         }
         else
         {
             // Low, dark cluster for failure + crash
-            EmitArpeggiatedChord(tick, _currentKey, [0, 1, -1], _config.BaseOctave - 1,
+            EmitArpeggiatedChord(tick, _currentKey, new[] { 0, 1, -1 }, _config.BaseOctave - 1,
                 MidiConstants.MaxVelocity, _config.TicksPerQuarterNote * 3);
 
             EmitNote(new NoteEvent
@@ -575,7 +575,7 @@ internal sealed class BuildMusicComposer : IDisposable
     /// Each note starts one <see cref="ArpeggioSpacingTicks"/> after the previous,
     /// creating a musical flourish.
     /// </summary>
-    private void EmitArpeggiatedChord(long startTick, MusicalKey key, ReadOnlySpan<int> degrees,
+    private void EmitArpeggiatedChord(long startTick, MusicalKey key, int[] degrees,
         int octave, int velocity, int noteDurationTicks)
     {
         var offset = 0;

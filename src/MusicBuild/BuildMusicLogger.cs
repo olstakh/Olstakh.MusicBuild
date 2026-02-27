@@ -45,7 +45,10 @@ public sealed class BuildMusicLogger : Logger
     /// <inheritdoc />
     public override void Initialize(IEventSource eventSource)
     {
-        ArgumentNullException.ThrowIfNull(eventSource);
+        if (eventSource is null)
+        {
+            throw new ArgumentNullException(nameof(eventSource));
+        }
 
         _config = MusicConfiguration.Parse(Parameters);
 

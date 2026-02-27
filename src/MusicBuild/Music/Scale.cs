@@ -34,42 +34,42 @@ internal sealed class Scale
         var interval = Intervals[normalizedDegree];
 
         var midiNote = ((octave + octaveOffset) * 12) + (int)key + interval;
-        return Math.Clamp(midiNote, 0, 127);
+        return Math.Max(0, Math.Min(127, midiNote));
     }
 
     /// <summary>Major scale: W-W-H-W-W-W-H.</summary>
     internal static Scale Major { get; } = new()
     {
         Name = "Major",
-        Intervals = [0, 2, 4, 5, 7, 9, 11],
+        Intervals = new[] { 0, 2, 4, 5, 7, 9, 11 },
     };
 
     /// <summary>Natural minor scale: W-H-W-W-H-W-W.</summary>
     internal static Scale Minor { get; } = new()
     {
         Name = "Minor",
-        Intervals = [0, 2, 3, 5, 7, 8, 10],
+        Intervals = new[] { 0, 2, 3, 5, 7, 8, 10 },
     };
 
     /// <summary>Pentatonic scale — always consonant.</summary>
     internal static Scale Pentatonic { get; } = new()
     {
         Name = "Pentatonic",
-        Intervals = [0, 2, 4, 7, 9],
+        Intervals = new[] { 0, 2, 4, 7, 9 },
     };
 
     /// <summary>Blues scale — pentatonic with the blue note.</summary>
     internal static Scale Blues { get; } = new()
     {
         Name = "Blues",
-        Intervals = [0, 3, 5, 6, 7, 10],
+        Intervals = new[] { 0, 3, 5, 6, 7, 10 },
     };
 
     /// <summary>Chromatic scale — all 12 semitones.</summary>
     internal static Scale Chromatic { get; } = new()
     {
         Name = "Chromatic",
-        Intervals = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        Intervals = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
     };
 
     /// <summary>

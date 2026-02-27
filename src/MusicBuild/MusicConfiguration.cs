@@ -1,3 +1,4 @@
+using System.Globalization;
 using MusicBuild.Music;
 
 namespace MusicBuild;
@@ -114,15 +115,16 @@ internal sealed record MusicConfiguration
 
         var config = new MusicConfiguration();
 
-        foreach (var pair in parameters.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (var rawPair in parameters!.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
         {
-            var parts = pair.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length != 2)
+            var pair = rawPair.Trim();
+            var eqIndex = pair.IndexOf('=');
+            if (eqIndex < 0)
             {
                 continue;
             }
 
-            config = ApplyParameter(config, parts[0], parts[1]);
+            config = ApplyParameter(config, pair.Substring(0, eqIndex).Trim(), pair.Substring(eqIndex + 1).Trim());
         }
 
         return config;
@@ -132,13 +134,13 @@ internal sealed record MusicConfiguration
     {
         return key.ToUpperInvariant() switch
         {
-                "BPM" when int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var bpm) && bpm > 0
+                "BPM" when int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var bpm) && bpm > 0
                     => config with { BeatsPerMinute = bpm },
 
                 "SCALE" when Enum.TryParse<ScaleType>(value, ignoreCase: true, out var scale)
                     => config with { ScaleType = scale },
 
-                "OCTAVE" when int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var octave) && octave is >= 0 and <= 9
+                "OCTAVE" when int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var octave) && octave is >= 0 and <= 9
                     => config with { BaseOctave = octave },
 
                 "INSTRUMENT" when Enum.TryParse<GeneralMidiInstrument>(value, ignoreCase: true, out var inst)
@@ -159,7 +161,7 @@ internal sealed record MusicConfiguration
                 "PACE" when bool.TryParse(value, out var pace)
                     => config with { Pace = pace },
 
-                "SPEED" when double.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var speed) && speed > 0
+                "SPEED" when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var speed) && speed > 0
                     => config with { Speed = speed },
 
                 "DRUMS" when bool.TryParse(value, out var drums)

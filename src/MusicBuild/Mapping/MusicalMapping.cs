@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+using System.Collections.Generic;
 using MusicBuild.Music;
 
 namespace MusicBuild.Mapping;
@@ -13,7 +13,7 @@ internal static class MusicalMapping
     /// Well-known MSBuild targets mapped to intentional scale degrees
     /// that create a musically coherent progression through a typical build.
     /// </summary>
-    private static readonly FrozenDictionary<string, int> WellKnownTargetDegrees =
+    private static readonly IReadOnlyDictionary<string, int> WellKnownTargetDegrees =
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         {
             ["Restore"] = 0,                              // Root — grounding start
@@ -37,7 +37,7 @@ internal static class MusicalMapping
             ["Pack"] = 6,
             ["Publish"] = 7,
             ["Test"] = 5,
-        }.ToFrozenDictionary();
+        };
 
     /// <summary>
     /// Maps a project file path to a musical key deterministically.

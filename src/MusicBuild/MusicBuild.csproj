@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Target netstandard2.0 so the logger DLL loads into any MSBuild host regardless of SDK version -->
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Description>MSBuild logger that generates MIDI music from build events</Description>
     <!-- MSBuild will load this logger assembly; we need to be able to copy dependencies alongside it -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <!-- Required by LibraryImport source generator for winmm.dll P/Invoke -->
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

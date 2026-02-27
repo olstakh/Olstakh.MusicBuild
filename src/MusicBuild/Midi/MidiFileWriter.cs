@@ -9,6 +9,9 @@ namespace MusicBuild.Midi;
 #pragma warning disable CA1859 // Prefer concrete types — IReadOnlyList enforces immutability contract per coding guidelines
 internal static class MidiFileWriter
 {
+    private static readonly byte[] MthdChunkId = { (byte)'M', (byte)'T', (byte)'h', (byte)'d' };
+    private static readonly byte[] MtrkChunkId = { (byte)'M', (byte)'T', (byte)'r', (byte)'k' };
+
     /// <summary>
     /// Writes a complete MIDI file with one track per unique channel used.
     /// </summary>
@@ -45,7 +48,7 @@ internal static class MidiFileWriter
     /// </summary>
     private static void WriteHeader(BinaryWriter writer, ushort numTracks, ushort ticksPerQuarterNote)
     {
-        writer.Write("MThd"u8);
+        writer.Write(MthdChunkId);
         WriteBigEndian32(writer, 6);                // chunk length (always 6 for header)
         WriteBigEndian16(writer, 1);                // format 1 = multi-track
         WriteBigEndian16(writer, numTracks);
@@ -111,8 +114,8 @@ internal static class MidiFileWriter
 
         foreach (var note in events)
         {
-            var noteNum = (byte)Math.Clamp(note.MidiNoteNumber, 0, 127);
-            var velocity = (byte)Math.Clamp(note.Velocity, 0, 127);
+            var noteNum = (byte)Math.Max(0, Math.Min(127, note.MidiNoteNumber));
+            var velocity = (byte)Math.Max(0, Math.Min(127, note.Velocity));
 
             midiEvents.Add((note.StartTick, (byte)(0x90 | channelByte), noteNum, velocity));                // Note On
             midiEvents.Add((note.StartTick + note.DurationTicks, (byte)(0x80 | channelByte), noteNum, 0));  // Note Off
@@ -149,7 +152,7 @@ internal static class MidiFileWriter
     private static void FlushTrack(BinaryWriter writer, MemoryStream trackStream)
     {
         var trackData = trackStream.ToArray();
-        writer.Write("MTrk"u8);
+        writer.Write(MtrkChunkId);
         WriteBigEndian32(writer, (uint)trackData.Length);
         writer.Write(trackData);
     }
@@ -180,7 +183,7 @@ internal static class MidiFileWriter
             return;
         }
 
-        Span<byte> buffer = stackalloc byte[4];
+        var buffer = new byte[4];
         var index = 3;
         buffer[index] = (byte)(value & 0x7F);
         value >>= 7;
