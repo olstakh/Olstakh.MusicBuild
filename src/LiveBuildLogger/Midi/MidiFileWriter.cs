@@ -97,6 +97,7 @@ internal static class MidiFileWriter
             {
                 MidiConstants.MelodyChannel => (int)config.MelodyInstrument,
                 MidiConstants.BassChannel => (int)config.BassInstrument,
+                MidiConstants.PadChannel => (int)config.PadInstrument,
                 _ => (int)config.MelodyInstrument,
             };
 

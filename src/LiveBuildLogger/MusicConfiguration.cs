@@ -45,6 +45,11 @@ internal sealed record MusicConfiguration
     internal GeneralMidiInstrument BassInstrument { get; init; } = GeneralMidiInstrument.SynthBass1;
 
     /// <summary>
+    /// General MIDI instrument for the pad/harmony channel (default: PadNewAge).
+    /// </summary>
+    internal GeneralMidiInstrument PadInstrument { get; init; } = GeneralMidiInstrument.PadNewAge;
+
+    /// <summary>
     /// Whether to play notes in real-time through the system MIDI synthesizer (default: true).
     /// </summary>
     internal bool LivePlayback { get; init; } = true;
@@ -124,6 +129,9 @@ internal sealed record MusicConfiguration
 
                 "BASS" when Enum.TryParse<GeneralMidiInstrument>(value, ignoreCase: true, out var bass)
                     => config with { BassInstrument = bass },
+
+                "PAD" when Enum.TryParse<GeneralMidiInstrument>(value, ignoreCase: true, out var pad)
+                    => config with { PadInstrument = pad },
 
                 "OUTPUT" when !string.IsNullOrWhiteSpace(value)
                     => config with { OutputFilePath = value },

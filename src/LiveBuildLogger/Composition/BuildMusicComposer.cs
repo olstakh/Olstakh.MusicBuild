@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using LiveBuildLogger.Mapping;
 using LiveBuildLogger.Midi;
 using LiveBuildLogger.Music;
@@ -14,10 +15,12 @@ namespace LiveBuildLogger.Composition;
 /// <para>
 /// Musical design principles:
 /// <list type="bullet">
+///   <item>Drum loop: four-on-the-floor kick pattern provides rhythmic backbone</item>
+///   <item>Bass line: root–fifth alternation follows harmonic progression</item>
+///   <item>Pad chords: sustained triads give harmonic context to melody notes</item>
 ///   <item>Stepwise motion: melody moves by small intervals, not random jumps</item>
 ///   <item>Note spacing: minimum delay between melody notes prevents clusters</item>
 ///   <item>Thinning: not every MSBuild event produces a note (tasks are filtered)</item>
-///   <item>Register separation: bass (octave 3), melody (octave 4), texture (octave 5)</item>
 ///   <item>Arpeggiation: chords spread in time instead of slamming simultaneously</item>
 /// </list>
 /// </para>
@@ -51,6 +54,26 @@ internal sealed class BuildMusicComposer : IDisposable
     /// Only every Nth task produces a note.
     /// </summary>
     private int _taskCounter;
+
+    /// <summary>
+    /// Key changes over time, used by the pattern generator to follow harmonic progression.
+    /// </summary>
+    private readonly List<(long Tick, MusicalKey Key)> _keyChanges = [];
+
+    /// <summary>
+    /// Cancellation source for the live drum/bass background loop.
+    /// </summary>
+    private CancellationTokenSource? _liveDrumCts;
+
+    /// <summary>
+    /// The background task running the live drum/bass loop.
+    /// </summary>
+    private Task? _liveDrumTask;
+
+    /// <summary>
+    /// Whether the live drum loop has been started (idempotent guard).
+    /// </summary>
+    private bool _liveDrumStarted;
 
     /// <summary>
     /// Minimum ticks between melody notes (quarter note).
@@ -92,21 +115,27 @@ internal sealed class BuildMusicComposer : IDisposable
 
         PaceToTimestamp(timestamp);
         EnsureInstrumentsInitialized();
+        StartLiveDrumLoop();
 
         _currentKey = MusicalMapping.ProjectToKey(projectPath);
         _projectKeys[projectPath] = _currentKey;
 
         var tick = ToTick(timestamp);
+        _keyChanges.Add((tick, _currentKey));
 
-        // Bass root note announces a new project (long, stable)
-        EmitNote(new NoteEvent
+        // Pad chord establishes harmonic context (root + 3rd + 5th)
+        var padDuration = _config.TicksPerQuarterNote * 16; // 4 bars
+        foreach (var degree in (ReadOnlySpan<int>)[0, 2, 4])
         {
-            MidiNoteNumber = _scale.DegreeToMidiNote(0, _currentKey, _config.BaseOctave - 1),
-            Velocity = MidiConstants.MediumVelocity,
-            Channel = MidiConstants.BassChannel,
-            StartTick = tick,
-            DurationTicks = _config.TicksPerQuarterNote * 4, // whole note — let it ring
-        });
+            EmitNote(new NoteEvent
+            {
+                MidiNoteNumber = _scale.DegreeToMidiNote(degree, _currentKey, _config.BaseOctave),
+                Velocity = 40,
+                Channel = MidiConstants.PadChannel,
+                StartTick = tick,
+                DurationTicks = padDuration,
+            });
+        }
 
         // Reset melody to root on new project for grounded feel
         _currentMelodyDegree = 0;
@@ -115,19 +144,22 @@ internal sealed class BuildMusicComposer : IDisposable
     internal void OnProjectFinished(string projectPath, bool succeeded, DateTime timestamp)
     {
         PaceToTimestamp(timestamp);
-        var key = _projectKeys.GetValueOrDefault(projectPath, _currentKey);
-        var tick = ToTick(timestamp);
 
-        // Resolving bass: root for success, flat-second for unease on failure
-        var degree = succeeded ? 0 : -1;
-        EmitNote(new NoteEvent
+        if (!succeeded)
         {
-            MidiNoteNumber = _scale.DegreeToMidiNote(degree, key, _config.BaseOctave - 1),
-            Velocity = succeeded ? MidiConstants.MediumVelocity : MidiConstants.HighVelocity,
-            Channel = MidiConstants.BassChannel,
-            StartTick = tick,
-            DurationTicks = _config.TicksPerQuarterNote * 4,
-        });
+            // Dissonant low pad on project failure — unsettling harmonic shift
+            var key = _projectKeys.GetValueOrDefault(projectPath, _currentKey);
+            var tick = ToTick(timestamp);
+
+            EmitNote(new NoteEvent
+            {
+                MidiNoteNumber = _scale.DegreeToMidiNote(-1, key, _config.BaseOctave - 1),
+                Velocity = MidiConstants.HighVelocity,
+                Channel = MidiConstants.PadChannel,
+                StartTick = tick,
+                DurationTicks = _config.TicksPerQuarterNote * 4,
+            });
+        }
     }
 
     internal void OnTargetStarted(string targetName, string projectPath, DateTime timestamp)
@@ -268,6 +300,13 @@ internal sealed class BuildMusicComposer : IDisposable
         PaceToTimestamp(timestamp);
         var tick = ToTick(timestamp);
 
+        // Generate the rhythmic backbone covering the entire build for MIDI file output
+        _events.AddRange(
+            BackgroundPatternGenerator.GenerateDrumPattern(0, tick, _config.TicksPerQuarterNote));
+        _events.AddRange(
+            BackgroundPatternGenerator.GenerateBassLine(
+                0, tick, _keyChanges, _scale, _config.BaseOctave - 1, _config.TicksPerQuarterNote));
+
         if (succeeded)
         {
             // Arpeggiated major-ish resolution: root → 3rd → 5th → octave
@@ -295,6 +334,7 @@ internal sealed class BuildMusicComposer : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        StopLiveDrumLoop();
         _liveOutput?.Dispose();
     }
 
@@ -326,6 +366,110 @@ internal sealed class BuildMusicComposer : IDisposable
             {
                 Thread.Sleep(sleepMs);
             }
+        }
+    }
+
+    /// <summary>
+    /// Starts a background thread that plays a drum beat and bass line through
+    /// the live MIDI output. Idempotent — only starts once.
+    /// </summary>
+    private void StartLiveDrumLoop()
+    {
+        if (_liveOutput is null || _liveDrumStarted)
+        {
+            return;
+        }
+
+        _liveDrumStarted = true;
+        _liveDrumCts = new CancellationTokenSource();
+        _liveDrumTask = Task.Run(() => LiveDrumBassLoop(_liveDrumCts.Token));
+    }
+
+    /// <summary>
+    /// Stops the background drum loop and waits briefly for it to exit.
+    /// </summary>
+    private void StopLiveDrumLoop()
+    {
+        if (_liveDrumCts is null)
+        {
+            return;
+        }
+
+        _liveDrumCts.Cancel();
+#pragma warning disable CA1031 // Must not let exceptions escape cleanup
+        try
+        {
+            _ = _liveDrumTask?.Wait(TimeSpan.FromSeconds(1));
+        }
+        catch (AggregateException)
+        {
+            // Task may have faulted — safe to ignore during cleanup
+        }
+#pragma warning restore CA1031
+        _liveDrumCts.Dispose();
+        _liveDrumCts = null;
+        _liveDrumTask = null;
+    }
+
+    /// <summary>
+    /// Background loop that plays a four-on-the-floor drum beat and bass notes
+    /// through the live MIDI output. Uses <see cref="Stopwatch"/> for timing accuracy.
+    /// </summary>
+    private void LiveDrumBassLoop(CancellationToken ct)
+    {
+        var output = _liveOutput!;
+        var sw = Stopwatch.StartNew();
+        var eighthNoteMs = 60_000.0 / _config.BeatsPerMinute / 2;
+        var eighthCount = 0;
+
+        while (!ct.IsCancellationRequested)
+        {
+            var targetMs = (long)(eighthCount * eighthNoteMs);
+            var sleepMs = (int)(targetMs - sw.ElapsedMilliseconds);
+            if (sleepMs > 1)
+            {
+                Thread.Sleep(sleepMs);
+            }
+
+            if (ct.IsCancellationRequested)
+            {
+                break;
+            }
+
+            var posInBar = eighthCount % 8;
+            var isOnBeat = posInBar % 2 == 0;
+            var beatNumber = posInBar / 2;
+            var noteLen = (int)eighthNoteMs;
+
+            // Four-on-the-floor kick
+            if (isOnBeat)
+            {
+                output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.BassDrum,
+                    MidiConstants.MediumVelocity, noteLen);
+            }
+
+            // Snare on beats 2 and 4
+            if (isOnBeat && beatNumber is 1 or 3)
+            {
+                output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.SnareDrum,
+                    70, noteLen);
+            }
+
+            // Closed hi-hat on every 8th note
+            output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.ClosedHiHat,
+                isOnBeat ? 45 : 30, noteLen / 2);
+
+            // Bass on beats 1 and 3 — follows current key
+            if (isOnBeat && beatNumber is 0 or 2)
+            {
+                var key = _currentKey;
+                var degree = beatNumber == 0 ? 0 : 4;
+                var bassNote = _scale.DegreeToMidiNote(degree, key, _config.BaseOctave - 1);
+                output.PlayNote(MidiConstants.BassChannel, bassNote,
+                    MidiConstants.MediumVelocity, (int)(eighthNoteMs * 3));
+            }
+
+            eighthCount++;
         }
     }
 
@@ -413,5 +557,6 @@ internal sealed class BuildMusicComposer : IDisposable
         _instrumentsInitialized = true;
         _liveOutput.SetInstrument(MidiConstants.MelodyChannel, _config.MelodyInstrument);
         _liveOutput.SetInstrument(MidiConstants.BassChannel, _config.BassInstrument);
+        _liveOutput.SetInstrument(MidiConstants.PadChannel, _config.PadInstrument);
     }
 }
