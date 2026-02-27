@@ -76,20 +76,32 @@ internal sealed class BuildMusicComposer : IDisposable
     private bool _liveDrumStarted;
 
     /// <summary>
-    /// Minimum ticks between melody notes (quarter note).
-    /// Prevents note clusters when many events fire at the same time.
+    /// Minimum ticks between melody notes (half note = 2 beats).
+    /// Keeps the melody sparse so notes don't pile up.
     /// </summary>
-    private int MinMelodySpacingTicks => _config.TicksPerQuarterNote;
+    private int MinMelodySpacingTicks => _config.TicksPerQuarterNote * 2;
 
     /// <summary>
-    /// Only every Nth task gets a note — keeps things sparse and musical.
+    /// Only every Nth task gets a note — keeps things very sparse.
     /// </summary>
-    private const int TaskThinningFactor = 4;
+    private const int TaskThinningFactor = 8;
 
     /// <summary>
     /// Tick spacing between arpeggiated chord notes (a 16th note apart).
     /// </summary>
     private int ArpeggioSpacingTicks => _config.TicksPerQuarterNote / 4;
+
+    /// <summary>
+    /// Half-note grid for snapping melody notes to strong beats.
+    /// Notes that land on beat 1 or 3 of a bar sound intentional, not random.
+    /// </summary>
+    private int HalfNoteGrid => _config.TicksPerQuarterNote * 2;
+
+    /// <summary>
+    /// Chord tones of the triad (root, 3rd, 5th). Melody gravitates toward these
+    /// because they are consonant with the pad and bass.
+    /// </summary>
+    private static ReadOnlySpan<int> ChordToneDegrees => [0, 2, 4];
 
     internal BuildMusicComposer(MusicConfiguration config, IMidiOutput? liveOutput = null)
     {
@@ -124,12 +136,13 @@ internal sealed class BuildMusicComposer : IDisposable
         _keyChanges.Add((tick, _currentKey));
 
         // Pad chord establishes harmonic context (root + 3rd + 5th)
+        // Placed one octave below melody so they don't compete in the same register
         var padDuration = _config.TicksPerQuarterNote * 16; // 4 bars
         foreach (var degree in (ReadOnlySpan<int>)[0, 2, 4])
         {
             EmitNote(new NoteEvent
             {
-                MidiNoteNumber = _scale.DegreeToMidiNote(degree, _currentKey, _config.BaseOctave),
+                MidiNoteNumber = _scale.DegreeToMidiNote(degree, _currentKey, _config.BaseOctave - 1),
                 Velocity = 40,
                 Channel = MidiConstants.PadChannel,
                 StartTick = tick,
@@ -167,7 +180,10 @@ internal sealed class BuildMusicComposer : IDisposable
         PaceToTimestamp(timestamp);
         _targetStartTimes[targetName] = timestamp;
 
-        var tick = ToTick(timestamp);
+        var rawTick = ToTick(timestamp);
+
+        // Snap to half-note grid so melody lands on strong beats (1 or 3)
+        var tick = SnapToGrid(rawTick);
 
         // Enforce minimum spacing — skip if too close to last melody note
         if (!HasMinimumSpacing(tick))
@@ -177,18 +193,19 @@ internal sealed class BuildMusicComposer : IDisposable
 
         var targetDegree = MusicalMapping.TargetToScaleDegree(targetName);
 
-        // Stepwise motion: move toward the target degree by at most ±2 steps
+        // Stepwise motion toward the target, then snap to nearest chord tone
         _currentMelodyDegree = StepToward(_currentMelodyDegree, targetDegree, maxStep: 2);
+        _currentMelodyDegree = SnapToChordTone(_currentMelodyDegree);
 
         var key = _projectKeys.GetValueOrDefault(projectPath, _currentKey);
 
         EmitNote(new NoteEvent
         {
             MidiNoteNumber = _scale.DegreeToMidiNote(_currentMelodyDegree, key, _config.BaseOctave),
-            Velocity = MidiConstants.MediumVelocity,
+            Velocity = MelodyVelocity(),
             Channel = MidiConstants.MelodyChannel,
             StartTick = tick,
-            DurationTicks = _config.TicksPerQuarterNote, // quarter note
+            DurationTicks = _config.TicksPerQuarterNote * 2, // half note — let it sing
         });
 
         _lastMelodyTick = tick;
@@ -221,7 +238,7 @@ internal sealed class BuildMusicComposer : IDisposable
 
     internal void OnTaskStarted(string taskName, DateTime timestamp)
     {
-        // Thin out tasks — only every Nth task produces a note
+        // Thin out tasks aggressively — only every Nth task produces a note
         _taskCounter++;
         if (_taskCounter % TaskThinningFactor != 0)
         {
@@ -229,27 +246,27 @@ internal sealed class BuildMusicComposer : IDisposable
         }
 
         PaceToTimestamp(timestamp);
-        var tick = ToTick(timestamp);
+        var rawTick = ToTick(timestamp);
+        var tick = SnapToGrid(rawTick);
 
         if (!HasMinimumSpacing(tick))
         {
             return;
         }
 
-        // Gentle step from current position — always move by exactly 1
+        // Gentle step from current position, then snap to chord tone
         var direction = MusicalMapping.TaskToScaleDegreeOffset(taskName) >= 3 ? 1 : -1;
         _currentMelodyDegree += direction;
-
-        // Keep melody in a comfortable 1-octave range (degrees 0–6)
         _currentMelodyDegree = WrapDegree(_currentMelodyDegree, 0, 7);
+        _currentMelodyDegree = SnapToChordTone(_currentMelodyDegree);
 
         EmitNote(new NoteEvent
         {
             MidiNoteNumber = _scale.DegreeToMidiNote(_currentMelodyDegree, _currentKey, _config.BaseOctave),
-            Velocity = MidiConstants.SoftVelocity,
+            Velocity = MelodyVelocity(),
             Channel = MidiConstants.MelodyChannel,
             StartTick = tick,
-            DurationTicks = _config.TicksPerQuarterNote / 2, // eighth note — lighter than targets
+            DurationTicks = _config.TicksPerQuarterNote, // quarter note — lighter than targets
         });
 
         _lastMelodyTick = tick;
@@ -478,6 +495,45 @@ internal sealed class BuildMusicComposer : IDisposable
     /// </summary>
     private bool HasMinimumSpacing(long tick)
         => _lastMelodyTick < 0 || (tick - _lastMelodyTick) >= MinMelodySpacingTicks;
+
+    /// <summary>
+    /// Snaps a tick to the nearest half-note grid position.
+    /// This makes melody notes land on strong beats (beats 1 and 3 of each bar)
+    /// instead of at arbitrary positions, which sounds rhythmically intentional.
+    /// </summary>
+    private long SnapToGrid(long tick)
+    {
+        var grid = HalfNoteGrid;
+        return grid > 0 ? ((tick + (grid / 2)) / grid) * grid : tick;
+    }
+
+    /// <summary>
+    /// Snaps a scale degree to the nearest chord tone (0, 2, or 4).
+    /// Melody notes that land on chord tones are consonant with the pad and bass,
+    /// while non-chord tones create brief dissonance that hurts the ear.
+    /// </summary>
+    private static int SnapToChordTone(int degree)
+    {
+        // Chord tones: 0, 2, 4. Map each degree to the nearest:
+        // 0→0, 1→0, 2→2, 3→2 or 4, 4→4, 5→4, 6→4 (or wrap to 0)
+        return degree switch
+        {
+            <= 0 => 0,
+            1 => 0,
+            2 => 2,
+            3 => 4, // resolve up to the 5th rather than down
+            4 => 4,
+            5 => 4,
+            _ => 4, // 6+ → 5th, next note will naturally resolve to root
+        };
+    }
+
+    /// <summary>
+    /// Produces gentle velocity variation so the melody doesn't sound mechanical.
+    /// Alternates between two levels based on the task counter.
+    /// </summary>
+    private int MelodyVelocity()
+        => (_taskCounter % 2 == 0) ? MidiConstants.MediumVelocity : MidiConstants.MediumVelocity - 15;
 
     /// <summary>
     /// Moves <paramref name="current"/> toward <paramref name="target"/> by at most
