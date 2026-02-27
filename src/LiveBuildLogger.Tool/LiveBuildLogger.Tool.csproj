@@ -4,12 +4,15 @@
     <OutputType>Exe</OutputType>
     <Description>Play music while your .NET project builds. A dotnet tool that wraps 'dotnet build' with a musical MSBuild logger.</Description>
     <RollForward>Major</RollForward>
+    <PackageId>Olstakh.MusicBuild</PackageId>
 
     <!-- dotnet tool packaging -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-music-build</ToolCommandName>
     <!-- NU5100: logger DLL is intentionally in content, not lib — it's loaded by path at runtime -->
     <NoWarn>$(NoWarn);NU5100</NoWarn>
+    <PackageOutputPath>$(RepoRoot)\artifacts</PackageOutputPath>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +23,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>  
 
 </Project>

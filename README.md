@@ -8,7 +8,7 @@ An MSBuild logger that turns your .NET builds into music. Each project picks a m
 
 ```bash
 # Install globally
-dotnet tool install --global LiveBuildLogger.Tool
+dotnet tool install --global Olstakh.MusicBuild
 
 # Build any project with music
 dotnet music-build
@@ -22,14 +22,6 @@ dotnet music-build --output build.mid
 # Pass arguments to dotnet build
 dotnet music-build -- -c Release
 ```
-
-### As an MSBuild logger (advanced)
-
-```bash
-dotnet build -logger:path/to/LiveBuildLogger.dll
-```
-
-By default, music plays live through your system's MIDI synthesizer (Windows only). No MIDI file is written unless you ask for one.
 
 ## Tool Options
 
@@ -52,27 +44,6 @@ dotnet music-build [music-options] [-- dotnet-build-options]
 | `--help` | Show help |
 
 Everything after `--` is passed directly to `dotnet build`.
-
-## Logger Parameters
-
-When using the raw MSBuild logger, parameters are passed as semicolon-separated `key=value` pairs:
-
-```bash
-# Live playback with defaults (piano, pentatonic scale, 120 BPM)
-dotnet build -logger:LiveBuildLogger.dll
-
-# Save a MIDI file without live playback
-dotnet build -logger:"LiveBuildLogger.dll;Output=build.mid;Live=false"
-
-# Blues scale at 140 BPM with Rhodes piano
-dotnet build -logger:"LiveBuildLogger.dll;BPM=140;Scale=Blues;Instrument=ElectricPiano1"
-
-# Replay a binary log with original timing
-dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true"
-
-# Replay at double speed, saving a MIDI file too
-dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true;Speed=2;Output=replay.mid"
-```
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
