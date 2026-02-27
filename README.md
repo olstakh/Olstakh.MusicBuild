@@ -105,28 +105,33 @@ Any of the following names can be used for `Instrument`, `Bass`, or `Pad`:
 
 A continuous drum loop (kick on every beat, snare on 2 & 4, hi-hat on 8th notes) and bass line (root–fifth alternation) play throughout, providing rhythmic and harmonic structure.
 
-## Playback Modes
-
-| Mode | Parameters | Description |
-|------|------------|-------------|
-| Live only | *(default)* | Real-time MIDI through system synthesizer |
-| Live + file | `Output=build.mid` | Live playback and saves a MIDI file |
-| File only | `Output=build.mid;Live=false` | Writes MIDI file, no sound |
 
 ## Binlog Replay
 
-When replaying a binary log, events fire instantly by default (no wall-clock gaps). Use `Pace=true` to space them at the original build timing:
+Replay a previously recorded binary log with music:
+
+```bash
+# Replay at original build speed (pacing is on by default)
+dotnet music-build replay build.binlog
+
+# 3x faster
+dotnet music-build replay build.binlog --speed 3
+
+# Blues scale at 140 BPM, save a MIDI file
+dotnet music-build replay build.binlog --scale Blues --bpm 140 --output replay.mid
+```
+
+Use `--no-pace` if you want all events to fire instantly (no timing gaps).
+
+<details>
+<summary>Using the raw logger instead of the tool</summary>
 
 ```bash
 dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true"
-```
-
-Use `Speed` to adjust replay rate:
-
-```bash
-# 3x faster than original build
 dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true;Speed=3"
 ```
+
+</details>
 
 ## Requirements
 
@@ -138,3 +143,4 @@ dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true;Speed=3"
 ```bash
 dotnet build
 ```
+
