@@ -1,4 +1,4 @@
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Subset of General MIDI program numbers (0-indexed).

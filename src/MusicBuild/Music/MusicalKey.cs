@@ -1,4 +1,4 @@
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Musical keys based on the chromatic scale.

@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MusicBuild/MusicBuild.csproj" />
+    <Project Path="src/MusicBuild.Tool/MusicBuild.Tool.csproj" />
+  </Folder>
+</Solution>

@@ -1,4 +1,4 @@
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Constants for MIDI channel assignments, velocities, and General MIDI percussion note numbers.

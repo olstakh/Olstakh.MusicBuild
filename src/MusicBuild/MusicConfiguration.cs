@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger;
+namespace MusicBuild;
 
 /// <summary>
 /// Configuration for the build-to-music generator.
@@ -43,6 +43,23 @@ internal sealed record MusicConfiguration
     /// General MIDI instrument for the bass channel (default: SynthBass1).
     /// </summary>
     internal GeneralMidiInstrument BassInstrument { get; init; } = GeneralMidiInstrument.SynthBass1;
+
+    /// <summary>
+    /// General MIDI instrument for the pad/harmony channel (default: PadNewAge).
+    /// </summary>
+    internal GeneralMidiInstrument PadInstrument { get; init; } = GeneralMidiInstrument.PadNewAge;
+
+    /// <summary>
+    /// Whether the drum loop is enabled (default: true).
+    /// Set to <c>false</c> via <c>Drums=false</c> to silence the rhythm section.
+    /// </summary>
+    internal bool EnableDrums { get; init; } = true;
+
+    /// <summary>
+    /// Whether the bass line is enabled (default: true).
+    /// Set to <c>false</c> via <c>BassLine=false</c> to silence the bass track.
+    /// </summary>
+    internal bool EnableBassLine { get; init; } = true;
 
     /// <summary>
     /// Whether to play notes in real-time through the system MIDI synthesizer (default: true).
@@ -105,11 +122,16 @@ internal sealed record MusicConfiguration
                 continue;
             }
 
-            var key = parts[0];
-            var value = parts[1];
+            config = ApplyParameter(config, parts[0], parts[1]);
+        }
 
-            config = key.ToUpperInvariant() switch
-            {
+        return config;
+    }
+
+    private static MusicConfiguration ApplyParameter(MusicConfiguration config, string key, string value)
+    {
+        return key.ToUpperInvariant() switch
+        {
                 "BPM" when int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var bpm) && bpm > 0
                     => config with { BeatsPerMinute = bpm },
 
@@ -125,6 +147,9 @@ internal sealed record MusicConfiguration
                 "BASS" when Enum.TryParse<GeneralMidiInstrument>(value, ignoreCase: true, out var bass)
                     => config with { BassInstrument = bass },
 
+                "PAD" when Enum.TryParse<GeneralMidiInstrument>(value, ignoreCase: true, out var pad)
+                    => config with { PadInstrument = pad },
+
                 "OUTPUT" when !string.IsNullOrWhiteSpace(value)
                     => config with { OutputFilePath = value },
 
@@ -137,10 +162,13 @@ internal sealed record MusicConfiguration
                 "SPEED" when double.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var speed) && speed > 0
                     => config with { Speed = speed },
 
+                "DRUMS" when bool.TryParse(value, out var drums)
+                    => config with { EnableDrums = drums },
+
+                "BASSLINE" when bool.TryParse(value, out var bassLine)
+                    => config with { EnableBassLine = bassLine },
+
                 _ => config,
             };
-        }
-
-        return config;
     }
 }

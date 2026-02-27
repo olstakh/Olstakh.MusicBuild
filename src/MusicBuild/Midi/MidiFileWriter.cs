@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Midi;
+namespace MusicBuild.Midi;
 
 /// <summary>
 /// Writes a collection of <see cref="NoteEvent"/>s to a Standard MIDI File (format 1).
@@ -97,6 +97,7 @@ internal static class MidiFileWriter
             {
                 MidiConstants.MelodyChannel => (int)config.MelodyInstrument,
                 MidiConstants.BassChannel => (int)config.BassInstrument,
+                MidiConstants.PadChannel => (int)config.PadInstrument,
                 _ => (int)config.MelodyInstrument,
             };
 

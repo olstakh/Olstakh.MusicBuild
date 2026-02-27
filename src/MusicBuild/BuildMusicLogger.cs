@@ -1,10 +1,10 @@
 using System.Diagnostics;
-using LiveBuildLogger.Composition;
-using LiveBuildLogger.Midi;
+using MusicBuild.Composition;
+using MusicBuild.Midi;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace LiveBuildLogger;
+namespace MusicBuild;
 
 /// <summary>
 /// MSBuild logger that generates music from build events.
@@ -17,7 +17,7 @@ namespace LiveBuildLogger;
 /// </para>
 /// <para>
 /// Usage:
-/// <code>dotnet build -logger:path/to/LiveBuildLogger.dll[;parameters]</code>
+/// <code>dotnet build -logger:path/to/MusicBuild.dll[;parameters]</code>
 /// </para>
 /// <para>
 /// Parameters (semicolon-separated <c>key=value</c>):
@@ -27,6 +27,7 @@ namespace LiveBuildLogger;
 ///   <item><c>Octave=4</c> — base octave for melody</item>
 ///   <item><c>Instrument=AcousticGrandPiano</c> — General MIDI instrument for melody</item>
 ///   <item><c>Bass=SynthBass1</c> — General MIDI instrument for bass</item>
+///   <item><c>Pad=PadNewAge</c> — General MIDI instrument for pad/harmony</item>
 ///   <item><c>Output=build-music.mid</c> — save a MIDI file (off by default)</item>
 ///   <item><c>Live=false</c> — disable real-time playback</item>
 ///   <item><c>Pace=true</c> — pace events to original timing (for binlog replay)</item>

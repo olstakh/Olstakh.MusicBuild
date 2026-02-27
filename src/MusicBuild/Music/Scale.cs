@@ -1,4 +1,4 @@
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Defines a musical scale as a set of semitone intervals from the root note.

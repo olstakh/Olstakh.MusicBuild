@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Mapping;
+namespace MusicBuild.Mapping;
 
 /// <summary>
 /// Maps MSBuild build concepts (projects, targets, tasks) to musical elements
