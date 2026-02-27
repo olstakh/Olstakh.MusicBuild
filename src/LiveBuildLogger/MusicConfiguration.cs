@@ -50,6 +50,18 @@ internal sealed record MusicConfiguration
     internal GeneralMidiInstrument PadInstrument { get; init; } = GeneralMidiInstrument.PadNewAge;
 
     /// <summary>
+    /// Whether the drum loop is enabled (default: true).
+    /// Set to <c>false</c> via <c>Drums=false</c> to silence the rhythm section.
+    /// </summary>
+    internal bool EnableDrums { get; init; } = true;
+
+    /// <summary>
+    /// Whether the bass line is enabled (default: true).
+    /// Set to <c>false</c> via <c>BassLine=false</c> to silence the bass track.
+    /// </summary>
+    internal bool EnableBassLine { get; init; } = true;
+
+    /// <summary>
     /// Whether to play notes in real-time through the system MIDI synthesizer (default: true).
     /// </summary>
     internal bool LivePlayback { get; init; } = true;
@@ -110,11 +122,16 @@ internal sealed record MusicConfiguration
                 continue;
             }
 
-            var key = parts[0];
-            var value = parts[1];
+            config = ApplyParameter(config, parts[0], parts[1]);
+        }
 
-            config = key.ToUpperInvariant() switch
-            {
+        return config;
+    }
+
+    private static MusicConfiguration ApplyParameter(MusicConfiguration config, string key, string value)
+    {
+        return key.ToUpperInvariant() switch
+        {
                 "BPM" when int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var bpm) && bpm > 0
                     => config with { BeatsPerMinute = bpm },
 
@@ -145,10 +162,13 @@ internal sealed record MusicConfiguration
                 "SPEED" when double.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var speed) && speed > 0
                     => config with { Speed = speed },
 
+                "DRUMS" when bool.TryParse(value, out var drums)
+                    => config with { EnableDrums = drums },
+
+                "BASSLINE" when bool.TryParse(value, out var bassLine)
+                    => config with { EnableBassLine = bassLine },
+
                 _ => config,
             };
-        }
-
-        return config;
     }
 }

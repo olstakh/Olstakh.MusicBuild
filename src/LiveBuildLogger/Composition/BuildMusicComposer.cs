@@ -318,11 +318,18 @@ internal sealed class BuildMusicComposer : IDisposable
         var tick = ToTick(timestamp);
 
         // Generate the rhythmic backbone covering the entire build for MIDI file output
-        _events.AddRange(
-            BackgroundPatternGenerator.GenerateDrumPattern(0, tick, _config.TicksPerQuarterNote));
-        _events.AddRange(
-            BackgroundPatternGenerator.GenerateBassLine(
-                0, tick, _keyChanges, _scale, _config.BaseOctave - 1, _config.TicksPerQuarterNote));
+        if (_config.EnableDrums)
+        {
+            _events.AddRange(
+                BackgroundPatternGenerator.GenerateDrumPattern(0, tick, _config.TicksPerQuarterNote));
+        }
+
+        if (_config.EnableBassLine)
+        {
+            _events.AddRange(
+                BackgroundPatternGenerator.GenerateBassLine(
+                    0, tick, _keyChanges, _scale, _config.BaseOctave - 1, _config.TicksPerQuarterNote));
+        }
 
         if (succeeded)
         {
@@ -392,7 +399,7 @@ internal sealed class BuildMusicComposer : IDisposable
     /// </summary>
     private void StartLiveDrumLoop()
     {
-        if (_liveOutput is null || _liveDrumStarted)
+        if (_liveOutput is null || _liveDrumStarted || (!_config.EnableDrums && !_config.EnableBassLine))
         {
             return;
         }
@@ -458,26 +465,29 @@ internal sealed class BuildMusicComposer : IDisposable
             var beatNumber = posInBar / 2;
             var noteLen = (int)eighthNoteMs;
 
-            // Four-on-the-floor kick
-            if (isOnBeat)
+            if (_config.EnableDrums)
             {
-                output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.BassDrum,
-                    MidiConstants.MediumVelocity, noteLen);
-            }
+                // Four-on-the-floor kick
+                if (isOnBeat)
+                {
+                    output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.BassDrum,
+                        MidiConstants.MediumVelocity, noteLen);
+                }
 
-            // Snare on beats 2 and 4
-            if (isOnBeat && beatNumber is 1 or 3)
-            {
-                output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.SnareDrum,
-                    70, noteLen);
-            }
+                // Snare on beats 2 and 4
+                if (isOnBeat && beatNumber is 1 or 3)
+                {
+                    output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.SnareDrum,
+                        70, noteLen);
+                }
 
-            // Closed hi-hat on every 8th note
-            output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.ClosedHiHat,
-                isOnBeat ? 45 : 30, noteLen / 2);
+                // Closed hi-hat on every 8th note
+                output.PlayNote(MidiConstants.PercussionChannel, MidiConstants.ClosedHiHat,
+                    isOnBeat ? 45 : 30, noteLen / 2);
+            }
 
             // Bass on beats 1 and 3 — follows current key
-            if (isOnBeat && beatNumber is 0 or 2)
+            if (_config.EnableBassLine && isOnBeat && beatNumber is 0 or 2)
             {
                 var key = _currentKey;
                 var degree = beatNumber == 0 ? 0 : 4;

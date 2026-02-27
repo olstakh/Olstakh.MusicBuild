@@ -40,6 +40,8 @@ dotnet music-build [music-options] [-- dotnet-build-options]
 | `--output <path.mid>` | Also save a MIDI file |
 | `--pace` | Pace events to original timing (for binlog replay) |
 | `--speed <number>` | Playback speed multiplier (default: 1.0) |
+| `--no-drums` | Disable the drum loop |
+| `--no-bass-line` | Disable the bass line |
 | `--no-live` | Disable live playback (only useful with --output) |
 | `--help` | Show help |
 
@@ -55,6 +57,8 @@ Everything after `--` is passed directly to `dotnet build`.
 | `Pad` | `PadNewAge` | General MIDI instrument for sustained harmony chords |
 | `Output` | *(none)* | File path to write a `.mid` file. No file is written if omitted |
 | `Live` | `true` | Enable/disable real-time MIDI playback (`true`/`false`) |
+| `Drums` | `true` | Enable/disable drum loop (`true`/`false`) |
+| `BassLine` | `true` | Enable/disable bass line (`true`/`false`) |
 | `Pace` | `false` | Space events at original timing — essential for binlog replay |
 | `Speed` | `1.0` | Playback speed multiplier (use with `Pace`). `2` = double speed, `0.5` = half |
 

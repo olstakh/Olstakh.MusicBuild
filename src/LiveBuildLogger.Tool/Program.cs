@@ -136,6 +136,14 @@ internal static class Program
             {
                 loggerParts.Add("Live=false");
             }
+            else if (args[i] is "--no-drums")
+            {
+                loggerParts.Add("Drums=false");
+            }
+            else if (args[i] is "--no-bass-line")
+            {
+                loggerParts.Add("BassLine=false");
+            }
             else if (args[i] is "--pace")
             {
                 loggerParts.Add("Pace=true");
@@ -219,6 +227,14 @@ internal static class Program
             {
                 loggerParts.Add("Live=false");
             }
+            else if (args[i] is "--no-drums")
+            {
+                loggerParts.Add("Drums=false");
+            }
+            else if (args[i] is "--no-bass-line")
+            {
+                loggerParts.Add("BassLine=false");
+            }
             else if (args[i] is "--pace")
             {
                 loggerParts.Add("Pace=true");
@@ -252,6 +268,8 @@ internal static class Program
               --output <path.mid>   Also save a MIDI file
               --pace                Enable pacing (for binlog replay — on by default with 'replay')
               --speed <number>      Playback speed multiplier (default: 1.0)
+              --no-drums            Disable the drum loop
+              --no-bass-line        Disable the bass line
               --no-live             Disable live playback (only useful with --output)
 
             Commands:
@@ -290,6 +308,8 @@ internal static class Program
               --pad <name>          Pad instrument (default: PadNewAge)
               --output <path.mid>   Also save a MIDI file
               --speed <number>      Playback speed multiplier (default: 1.0)
+              --no-drums            Disable the drum loop
+              --no-bass-line        Disable the bass line
               --no-pace             Disable pacing (events fire instantly)
               --no-live             Disable live playback (only useful with --output)
 
