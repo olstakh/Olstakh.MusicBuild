@@ -1,10 +1,10 @@
 using System.Diagnostics;
 
-namespace LiveBuildLogger.Tool;
+namespace MusicBuild.Tool;
 
 /// <summary>
 /// Entry point for the <c>dotnet music-build</c> global tool.
-/// Wraps <c>dotnet build</c> (or replays a binlog) and injects the LiveBuildLogger
+/// Wraps <c>dotnet build</c> (or replays a binlog) and injects the MusicBuild
 /// as an MSBuild logger, so users get music without manually specifying <c>-logger:</c>.
 /// <para>
 /// Usage:
@@ -41,11 +41,11 @@ internal static class Program
 
         // Find the logger DLL bundled alongside this tool
         var toolDir = AppContext.BaseDirectory;
-        var loggerDll = Path.Combine(toolDir, "LiveBuildLogger.dll");
+        var loggerDll = Path.Combine(toolDir, "MusicBuild.dll");
 
         if (!File.Exists(loggerDll))
         {
-            Console.Error.WriteLine("Error: Could not find LiveBuildLogger.dll alongside the tool.");
+            Console.Error.WriteLine("Error: Could not find MusicBuild.dll alongside the tool.");
             Console.Error.WriteLine($"Expected at: {loggerDll}");
             return 1;
         }

@@ -1,10 +1,10 @@
 using System.Diagnostics;
-using LiveBuildLogger.Composition;
-using LiveBuildLogger.Midi;
+using MusicBuild.Composition;
+using MusicBuild.Midi;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace LiveBuildLogger;
+namespace MusicBuild;
 
 /// <summary>
 /// MSBuild logger that generates music from build events.
@@ -17,7 +17,7 @@ namespace LiveBuildLogger;
 /// </para>
 /// <para>
 /// Usage:
-/// <code>dotnet build -logger:path/to/LiveBuildLogger.dll[;parameters]</code>
+/// <code>dotnet build -logger:path/to/MusicBuild.dll[;parameters]</code>
 /// </para>
 /// <para>
 /// Parameters (semicolon-separated <c>key=value</c>):

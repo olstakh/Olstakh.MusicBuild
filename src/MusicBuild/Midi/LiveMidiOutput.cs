@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Midi;
+namespace MusicBuild.Midi;
 
 /// <summary>
 /// Real-time MIDI output using the Windows Multimedia API (winmm.dll).

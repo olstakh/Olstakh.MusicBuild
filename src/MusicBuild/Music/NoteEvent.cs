@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Represents a single MIDI note event with timing, channel, and dynamics.

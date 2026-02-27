@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger;
+namespace MusicBuild;
 
 /// <summary>
 /// Configuration for the build-to-music generator.

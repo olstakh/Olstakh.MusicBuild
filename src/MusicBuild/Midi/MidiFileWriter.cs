@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Midi;
+namespace MusicBuild.Midi;
 
 /// <summary>
 /// Writes a collection of <see cref="NoteEvent"/>s to a Standard MIDI File (format 1).

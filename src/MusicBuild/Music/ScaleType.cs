@@ -1,4 +1,4 @@
-namespace LiveBuildLogger.Music;
+namespace MusicBuild.Music;
 
 /// <summary>
 /// Available musical scale types for mapping build events to notes.

@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <!-- Bundle the logger DLL as content so it ships inside the tool package -->
-    <ProjectReference Include="..\LiveBuildLogger\LiveBuildLogger.csproj">
+    <ProjectReference Include="..\MusicBuild\MusicBuild.csproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <OutputItemType>Content</OutputItemType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

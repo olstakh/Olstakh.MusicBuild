@@ -1,4 +1,4 @@
-# LiveBuildLogger
+# MusicBuild
 
 An MSBuild logger that turns your .NET builds into music. Each project picks a musical key, targets become melodic phrases, tasks add texture, warnings hit percussion, and errors crash. A continuous drum loop and bass line provide rhythmic backbone throughout.
 
@@ -131,8 +131,8 @@ Use `--no-pace` if you want all events to fire instantly (no timing gaps).
 <summary>Using the raw logger instead of the tool</summary>
 
 ```bash
-dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true"
-dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true;Speed=3"
+dotnet msbuild build.binlog -logger:"MusicBuild.dll;Pace=true"
+dotnet msbuild build.binlog -logger:"MusicBuild.dll;Pace=true;Speed=3"
 ```
 
 </details>

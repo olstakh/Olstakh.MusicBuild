@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Composition;
+namespace MusicBuild.Composition;
 
 /// <summary>
 /// Generates continuous musical patterns (drums, bass) that provide rhythmic and

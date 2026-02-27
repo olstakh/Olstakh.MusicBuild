@@ -1,6 +1,6 @@
-using LiveBuildLogger.Music;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Midi;
+namespace MusicBuild.Midi;
 
 /// <summary>
 /// Abstraction for MIDI output — either real-time audio or file recording.

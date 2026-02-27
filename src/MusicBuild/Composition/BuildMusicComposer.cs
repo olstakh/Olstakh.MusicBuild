@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using LiveBuildLogger.Mapping;
-using LiveBuildLogger.Midi;
-using LiveBuildLogger.Music;
+using MusicBuild.Mapping;
+using MusicBuild.Midi;
+using MusicBuild.Music;
 
-namespace LiveBuildLogger.Composition;
+namespace MusicBuild.Composition;
 
 /// <summary>
 /// Converts MSBuild build events into <see cref="NoteEvent"/>s by mapping build
