@@ -4,13 +4,58 @@ An MSBuild logger that turns your .NET builds into music. Each project picks a m
 
 ## Quick Start
 
+### As a dotnet tool (easiest)
+
+```bash
+# Install globally
+dotnet tool install --global LiveBuildLogger.Tool
+
+# Build any project with music
+dotnet music-build
+
+# Customize the sound
+dotnet music-build --bpm 140 --scale Blues --instrument ElectricPiano1
+
+# Save a MIDI file too
+dotnet music-build --output build.mid
+
+# Pass arguments to dotnet build
+dotnet music-build -- -c Release
 ```
+
+### As an MSBuild logger (advanced)
+
+```bash
 dotnet build -logger:path/to/LiveBuildLogger.dll
 ```
 
 By default, music plays live through your system's MIDI synthesizer (Windows only). No MIDI file is written unless you ask for one.
 
-## Usage Examples
+## Tool Options
+
+```
+dotnet music-build [music-options] [-- dotnet-build-options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--bpm <number>` | Tempo in beats per minute (default: 120) |
+| `--scale <name>` | Scale type (default: Pentatonic) |
+| `--octave <0-9>` | Base octave for melody (default: 4) |
+| `--instrument <name>` | Melody instrument (default: AcousticGrandPiano) |
+| `--bass <name>` | Bass instrument (default: SynthBass1) |
+| `--pad <name>` | Pad instrument (default: PadNewAge) |
+| `--output <path.mid>` | Also save a MIDI file |
+| `--pace` | Pace events to original timing (for binlog replay) |
+| `--speed <number>` | Playback speed multiplier (default: 1.0) |
+| `--no-live` | Disable live playback (only useful with --output) |
+| `--help` | Show help |
+
+Everything after `--` is passed directly to `dotnet build`.
+
+## Logger Parameters
+
+When using the raw MSBuild logger, parameters are passed as semicolon-separated `key=value` pairs:
 
 ```bash
 # Live playback with defaults (piano, pentatonic scale, 120 BPM)
@@ -28,10 +73,6 @@ dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true"
 # Replay at double speed, saving a MIDI file too
 dotnet msbuild build.binlog -logger:"LiveBuildLogger.dll;Pace=true;Speed=2;Output=replay.mid"
 ```
-
-## Parameters
-
-Parameters are passed as semicolon-separated `key=value` pairs after the DLL path.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|

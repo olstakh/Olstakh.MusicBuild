@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LiveBuildLogger/LiveBuildLogger.csproj" />
+    <Project Path="src/LiveBuildLogger.Tool/LiveBuildLogger.Tool.csproj" />
   </Folder>
 </Solution>
