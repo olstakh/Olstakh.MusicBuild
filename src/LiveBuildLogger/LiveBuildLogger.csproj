@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>MSBuild logger that generates MIDI music from build events</Description>
+    <!-- MSBuild will load this logger assembly; we need to be able to copy dependencies alongside it -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- Required by LibraryImport source generator for winmm.dll P/Invoke -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MSBuild provides these at runtime; don't copy to output -->
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

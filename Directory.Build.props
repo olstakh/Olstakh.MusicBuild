@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
+    <RepoRoot>$(MSBuildThisFileDirectory.TrimEnd('\\'))</RepoRoot>
+    <Nullable>Enable</Nullable>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>Enable</ImplicitUsings>
+    <LangVersion>Latest</LangVersion>
+    <DebugType>embedded</DebugType>
+    <AnalysisMode Condition="'$(AnalysisMode)' == ''">AllEnabledByDefault</AnalysisMode>
+
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Binlog will contain performance info about roslyn analyzers and source generators -->
+    <ReportAnalyzer>true</ReportAnalyzer>
+
+    <TreatWarningsAsErrors Condition=" '$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild Condition="'$(EnforceCodeStyleInBuild)'==''">true</EnforceCodeStyleInBuild>        
+  </PropertyGroup>
+
+  <!-- Packaging 
+  <PropertyGroup>
+    <Authors></Authors>
+    <Copyright></Copyright>
+    <Description></Description>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <PackageLicenseExpression></PackageLicenseExpression>
+  </PropertyGroup>
+  -->
+
+  <!-- Source Link (https://github.com/dotnet/sourcelink) - Only enable in git repos -->
+  <PropertyGroup>
+    <!-- Check if we're in a git repository -->
+    <IsGitRepository Condition="Exists('$(MSBuildThisFileDirectory).git')">true</IsGitRepository>
+    <IsAzureDevOps Condition="'$(BUILD_REPOSITORY_PROVIDER)' == 'TfsGit'">true</IsAzureDevOps>
+    <PublishRepositoryUrl Condition="'$(IsGitRepository)' == 'true'">true</PublishRepositoryUrl>
+    <EmbedUntrackedSources Condition="'$(IsGitRepository)' == 'true'">true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- Dependency Rules for ReferenceProtector -->
+  <PropertyGroup>
+    <DependencyRulesFile Condition="'$(DependencyRulesFile)' == ''">$(MSBuildThisFileDirectory)DependencyRules.json</DependencyRulesFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsGitRepository)' == 'true'">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" Condition="'$(IsAzureDevOps)' != 'true'" />
+    <PackageReference Include="Microsoft.SourceLink.AzureDevOpsServer" PrivateAssets="All" Condition="'$(IsAzureDevOps)' == 'true'" />
+  </ItemGroup>
+
+  <!-- Versioning (https://github.com/dotnet/Nerdbank.GitVersioning) -->
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
+  </ItemGroup>
+
+
+</Project>

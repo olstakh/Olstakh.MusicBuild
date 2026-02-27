@@ -1,0 +1,22 @@
+{
+    "$schema": "https://raw.githubusercontent.com/olstakh/ReferenceProtector/main/src/Build/DependencyRules.schema.json",
+    "ProjectDependencies": [
+        {
+            "Description": "Dependencies between test projects should be avoided",
+            "LinkType": "DirectOrTransitive",
+            "Policy": "Forbidden",
+            "From": "*Tests.csproj",
+            "To": "*Tests.csproj",
+            "Exceptions": []
+        }
+    ],
+    "PackageDependencies": [
+        {
+            "Description": "Use XUnit, instead of MSTest, unless it's for in-cluster runner service",
+            "Policy": "Forbidden",
+            "From": "*",
+            "To": "MSTest.*",
+            "Exceptions": []
+        }
+    ]
+}
